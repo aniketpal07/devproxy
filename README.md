@@ -18,26 +18,26 @@ uv run -m devproxy
  **Basic request**
  ```bash
  $ curl http://localhost:8888/    
-Hello from DevProxy! You requested: GET /%    
+Hello from DevProxy! You requested: GET /%   
+ **Metrics endpoint**
  $ curl http://localhost:8888/metrics
 requests_total 2
  errors_total 0
+ **Bad request (malformed)**
  $  printf "GET /\r\n\r\n" | nc localhost 8888
 HTTP/1.1 400 Bad Request
 Content-Type: text/plain; charset=utf-8
 Content-Length: 29
 Connection: close
-
 Malformed request line: GET /%   
-
+ **Timeout simulation(slow client)**
 $ { echo -ne "GET / HTTP/1.1\r\n"; sleep 6; } | nc localhost 8888
 HTTP/1.1 400 Bad Request
 Content-Type: text/plain; charset=utf-8
 Content-Length: 26
 Connection: close
-
 Header timeout after 10.0s%   
-
+ **Concurrency Test (tested with hey)
  $ hey -z 10s -c 100 http://localhost:8888/
 
 Summary:
@@ -82,3 +82,4 @@ Details (average, fastest, slowest):
 
 Status code distribution:
   [200]	25958 responses
+
