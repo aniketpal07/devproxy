@@ -1,0 +1,47 @@
+1. In asyncio python we must have an event loop. The loop is conductor that runs async tasks and callbacks, performs network IO operations, and runs subprocesses.
+2. Async keyword is used to declare a function as asynchronous. it can pause (await) and resume its execution. This is where our server logic will live.
+3. Asyncio.run() is a high-level function that runs the main() coroutine, manages the event loop, and handles cleanup after the coroutine completes.
+4. what is coroutines: Coroutines are special functions that can pause and resume their execution. They are defined using the async keyword and can use the await keyword to pause their execution until the awaited task is complete.
+5. __name__ = "__main__ : When we run the python server.py python set __name__ to __main__. When we import server python sets __name__ = "server"
+    If we import this module in a test, we dont want asyncio.run(main()) to execute
+    This guard seprated library code from executable code. Without it the test.server.py if we import server it will run the asyncio.run not the test 
+6. We have a running async program that does nothing yet so what should main() do first. It should start a server on port 8888, but before starting a server the first thing a production system need is a logger for debugging, and for that we use logger = structlog.get_logger()
+
+CODE BEFORE THE TRY/EXCEPT ERROR HANDLING
+ import asyncio
+
+async def handle_client(reader, writer):
+    # Read the http request line
+    request_line_bytes = await reader.readline()
+    # Convert bytes to string and remove the \r\n
+    request_line = request_line_bytes.decode('utf-8').strip()
+    # print("Client connected!")
+    print(f"Got Request: {request_line}")
+
+    headers = {}
+    while True:
+        header_line_bytes = await reader.readline()
+        header_line = header_line_bytes.decode('utf-8').strip()
+        
+        if header_line == "":
+            print("End of Headers")
+            break
+
+        key, value = header_line.split(":", 1)
+        headers[key] = value
+        print(f" {key}: {value}")
+    print(f"All Headers: {headers}")
+    writer.close()
+    await writer.wait_closed()
+
+
+async def main(): 
+    server = await asyncio.start_server(handle_client, "localhost", 8888)
+    addr = server.sockets[0].getsockname()
+    print(f"Serving on {addr}")
+    async with server:
+        await server.serve_forever()
+
+if __name__ == "__main__": 
+    asyncio.run(main())
+
