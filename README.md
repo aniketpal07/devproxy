@@ -129,8 +129,6 @@ uv pip install -e ".[dev]"
 pytest
 ```
 
-## License
-
 
 ## Acknowledgments
 
