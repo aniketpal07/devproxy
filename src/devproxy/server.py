@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 def generate_response(request: HTTPRequest, metrics: Metrics) -> bytes:
     """Generate HTTP response"""
     if request.path == "/metrics":
-        reqs, errs = metrics.sanpshot()
+        reqs, errs = metrics.snapshot()
         body = f"requests_total {reqs}\n errors_total {errs}\n"
         return body.encode('utf-8')
     response_body = f"Hello from DevProxy! You requested: {request.method} {request.path}"
@@ -87,7 +87,8 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
         method = "UNKNOWN"
         path = "UNKNOWN"
         
-        logger.info("Client connected: %s (total: %d)", client_addr,)
+        total_reqs, _ = metrics.snapshot()
+        logger.info("Client connected: %s (total: %d)", client_addr, total_reqs)
         
         try:
             # Parse request (can fail completely)
@@ -141,7 +142,7 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
             
             writer.write(timeout_response)
             await writer.drain()
-            logger.info("Timeout response sent to %s", client_addr,)
+            logger.info("Timeout response sent to %s", client_addr)
             
         except Exception as e:
             # Last resort
@@ -194,7 +195,8 @@ async def main():
         async with server:
             await server.serve_forever()
     except KeyboardInterrupt:
-        logger.info("Server stopped by user (final: requests=%d, errors=%d)", reqs, errs)
+        final_reqs, final_errs = metrics.snapshot()
+        logger.info("Server stopped by user (final: requests=%d, errors=%d)", final_reqs, final_errs)
     except Exception as e:
         logger.error("Server crashed: %s", e, exc_info=True)
         raise
