@@ -23,5 +23,6 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "coverage",
+    "pytest-cov",
 ]
 
