@@ -39,11 +39,18 @@ async def test_proxy_intergration():
         writer.write(b"GET /proxy/ HTTP/1.1\r\nHost: localhost\r\n\r\n")
         await writer.drain()
             
-        response = await reader.read(1000)
+        response = b""
+        while True:
+            chunk = await asyncio.wait_for(reader.read(4096), timeout=2.0)
+            if not chunk:
+                break
+            response += chunk
+            if b"Directory listing" in response or len(response) > 10000:
+                break
         writer.close()
         await writer.wait_closed()
             
-        assert b"200 OK" in response
+        assert b"200 OK" in response, f"Expected 200 OK, got: {response[:200]}"
         assert b"Directory listing" in response  # From http.server
             
         # Test echo endpoint
@@ -51,11 +58,11 @@ async def test_proxy_intergration():
         writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
         await writer.drain()
             
-        response = await reader.read(1000)
+        response = await asyncio.wait_for(reader.read(4096), timeout=2.0)
         writer.close()
         await writer.wait_closed()
             
-        assert b"Hello from DevProxy" in response
+        assert b"Hello from DevProxy" in response, f"Expected echo response, got: {response}"
             
         print("All integration tests passed!")
             
